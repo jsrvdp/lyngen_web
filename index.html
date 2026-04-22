@@ -1074,9 +1074,6 @@
     <div class="modal-weather" id="modalWeather">
       <div class="wx-header">
         <span class="wx-title">Previsión meteorológica</span>
-        <button class="wx-fetch-btn" id="wxFetchBtn" onclick="triggerWeatherLoad()">
-          ↻ Obtener último run
-        </button>
       </div>
       <div class="wx-source-row">
         <span class="wx-source" id="wxSource"></span>
@@ -1507,10 +1504,8 @@ function parseWxData(json) {
 }
 
 function getDaySlice(data, dayOffset) {
-  // Get 24 hours starting from midnight of dayOffset
   const now = new Date();
-  const target = new Date(now);
-  target.setDate(now.getDate() + dayOffset);
+  const target = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + dayOffset));
   const dateStr = target.toISOString().slice(0, 10);
   const indices = data.times.map((t,i) => t.startsWith(dateStr) ? i : -1).filter(i => i >= 0);
   return indices;
@@ -1666,84 +1661,92 @@ function drawSummary() {
 
 let _currentWxRoute = null;
 
+
+// ── Leer datos del nodo AROME más cercano ──────────────────────────
+function fetchWeatherFromArome(lat, lon) {
+  if (!aromeJsonData) throw new Error('arome_data.json no cargado — activa el heatmap primero');
+  const ptIdx = aromeNearest(lat, lon);
+  const n     = _aNPts;
+  const times = aromeJsonData.times;
+  const nT    = times.length;
+  const get = key => {
+    const arr = aromeJsonData.variables[key];
+    if (!arr) return new Array(nT).fill(null);
+    return Array.from({length: nT}, (_, t) => arr[t * n + ptIdx]);
+  };
+  const rainAcc = get('precipitation_amount_acc');
+  const snowAcc = get('snowfall_amount_acc');
+  const rain = rainAcc.map((v, i) => {
+    if (v == null) return null;
+    if (i === 0) return Math.max(0, v);
+    const prev = rainAcc[i-1];
+    return prev == null ? Math.max(0, v) : Math.max(0, v - prev);
+  });
+  const snowfall = snowAcc.map((v, i) => {
+    if (v == null) return null;
+    if (i === 0) return Math.max(0, v);
+    const prev = snowAcc[i-1];
+    return prev == null ? Math.max(0, v) : Math.max(0, v - prev);
+  });
+  const elevation = (_aElev && _aElev[ptIdx] != null) ? _aElev[ptIdx] : null;
+  const nodeLat = _aLats[ptIdx];
+  const nodeLon = _aLons[ptIdx];
+  const distKm  = Math.round(Math.sqrt(((lat-nodeLat)*111)**2 + ((lon-nodeLon)*111*Math.cos(lat*Math.PI/180))**2) * 10) / 10;
+  return {
+    times, elevation, nodeLat, nodeLon, distKm,
+    temperature_2m:  get('air_temperature_2m'),
+    rain, snowfall,
+    cloud_cover:     get('cloud_area_fraction'),
+    wind_gusts_10m:  get('wind_speed_of_gust'),
+    wind_speed_10m:  get('wind_speed_10m'),
+  };
+}
+
 function prepareWeatherSection(r) {
-  // Called when modal opens — just set up the section, don't fetch yet
   _currentWxRoute = r;
   wxData = null;
   wxDayOffset = 0;
   if (wxChart) { wxChart.destroy(); wxChart = null; }
 
-  const canvas = document.getElementById('wxChart');
+  const canvas  = document.getElementById('wxChart');
   const loading = document.getElementById('wxLoading');
-  const src = document.getElementById('wxSource');
+  const src     = document.getElementById('wxSource');
   const runTime = document.getElementById('wxRunTime');
 
-  canvas.style.display = 'none';
-  loading.style.display = 'none';
   document.getElementById('wxDays').innerHTML = '';
   document.getElementById('wxSummary').innerHTML = '';
-  document.getElementById('wxFetchBtn').disabled = !r.wx_lat;
-  document.getElementById('wxFetchBtn').textContent = '↻ Obtener último run';
-  document.getElementById('wxFetchBtn').classList.remove('loading');
 
-  if (r.wx_lat) {
-    src.textContent = `Estación: ${r.wx_lat}°N ${r.wx_lon}°E · ${r.wx_dist_km} km`;
-    runTime.textContent = '';
-  } else {
-    src.textContent = 'Sin cobertura meteorológica';
-    runTime.textContent = '';
+  if (!aromeJsonData) {
+    canvas.style.display = 'none';
+    loading.style.display = 'flex';
+    loading.textContent = '⚠ Activa el heatmap para cargar datos AROME';
+    src.textContent = '';
+    if (runTime) runTime.textContent = '';
+    return;
   }
-}
 
-async function triggerWeatherLoad() {
-  const r = _currentWxRoute;
-  if (!r || !r.wx_lat) return;
-
-  const btn = document.getElementById('wxFetchBtn');
-  const loading = document.getElementById('wxLoading');
-  const canvas = document.getElementById('wxChart');
-  const src = document.getElementById('wxSource');
-  const runTime = document.getElementById('wxRunTime');
-
-  btn.disabled = true;
-  btn.textContent = '↻ Cargando...';
-  btn.classList.add('loading');
   loading.style.display = 'flex';
-  loading.textContent = 'OBTENIENDO ÚLTIMO RUN...';
+  loading.textContent = 'Cargando…';
   canvas.style.display = 'none';
-  document.getElementById('wxDays').innerHTML = '';
-  document.getElementById('wxSummary').innerHTML = '';
 
   try {
-    const json = await fetchWeather(r.wx_lat, r.wx_lon);
-    wxData = parseWxData(json);
+    wxData = fetchWeatherFromArome(r.lat, r.lon);
+    const elevStr = wxData.elevation != null ? ` · ${Math.round(wxData.elevation)} m` : '';
+    const runStr  = aromeJsonData.run_time
+      ? ` · Run ${new Date(aromeJsonData.run_time).toUTCString().slice(5,17)} UTC`
+      : '';
+    src.textContent = `AROME-Arctic · nodo ${wxData.nodeLat.toFixed(3)}°N ${wxData.nodeLon.toFixed(3)}°E · ${wxData.distKm} km${elevStr}${runStr}`;
+    if (runTime) runTime.textContent = '';
     loading.style.display = 'none';
-
-    // Show station info with elevation
-    const elev = wxData.elevation != null ? ` · ${Math.round(wxData.elevation)} m asl` : '';
-    src.textContent = `Estación: ${r.wx_lat}°N ${r.wx_lon}°E · ${r.wx_dist_km} km${elev}`;
-
-    // Show run timestamp
-    const now = new Date();
-    runTime.textContent = `Run: ${now.toLocaleString('es-ES', {
-      day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'
-    })}`;
-
     buildDayCards(wxData);
     drawChart();
     drawSummary();
-
-    btn.disabled = false;
-    btn.textContent = '↻ Actualizar';
-    btn.classList.remove('loading');
   } catch(e) {
-    loading.textContent = 'Error: ' + e.message;
-    btn.disabled = false;
-    btn.textContent = '↻ Reintentar';
-    btn.classList.remove('loading');
-    console.error(e);
+    loading.textContent = '⚠ ' + e.message;
   }
 }
+
+
 
 async function loadWeatherForModal(r) {
   prepareWeatherSection(r);
