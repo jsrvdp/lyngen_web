@@ -2222,18 +2222,18 @@ function renderHeatmap() {
     rect.bindPopup(`
       <div class="hm-popup">
         <div class="hm-popup-title">${pt.lat.toFixed(3)}°N · ${pt.lon.toFixed(3)}°E</div>
-        ${(_aElev && _aElev[ptIdx] != null && _aElev[ptIdx] > 0) ? `<div class="hm-popup-row"><span class="hm-popup-label">Altitud</span><span class="hm-popup-val">${Math.round(_aElev[ptIdx])} m</span></div>` : ''}
-        <div class="hm-popup-row"><span class="hm-popup-label">Válido</span><span class="hm-popup-val" style="font-size:9px">${validTime}</span></div>
-        <div class="hm-popup-row"><span class="hm-popup-label">Temp 2m</span><span class="hm-popup-val">${f1(temp,'°C')}${fsp(tSpr)}</span></div>
-        <div class="hm-popup-row"><span class="hm-popup-label">Nubosidad</span><span class="hm-popup-val">${f0(cloud,'%')}</span></div>
-        <div class="hm-popup-row"><span class="hm-popup-label">Viento 10m</span><span class="hm-popup-val">${f0(wind,'km/h')}</span></div>
-        <div class="hm-popup-row"><span class="hm-popup-label">Ráfagas</span><span class="hm-popup-val">${f0(gust,'km/h')}${fsp(gSpr)}</span></div>
-        <div class="hm-popup-row"><span class="hm-popup-label">Lluvia (h)</span><span class="hm-popup-val">${f1(rain,'mm/h')}</span></div>
-        <div class="hm-popup-row"><span class="hm-popup-label">Nieve (h)</span><span class="hm-popup-val">${f1(snow,'mm/h')}</span></div>
-        <div class="hm-popup-row"><span class="hm-popup-label">Lluvia acum.</span><span class="hm-popup-val">${f1(rainAcc,'mm')}</span></div>
-        <div class="hm-popup-row"><span class="hm-popup-label">Nieve acum.</span><span class="hm-popup-val">${f1(snowAcc,'mm')}</span></div>
+        ${(_aElev && _aElev[ptIdx] != null && _aElev[ptIdx] > 0) ? `<div class="hm-popup-row"><span class="hm-popup-label">${t('hmAltitude')}</span><span class="hm-popup-val">${Math.round(_aElev[ptIdx])} m</span></div>` : ''}
+        <div class="hm-popup-row"><span class="hm-popup-label">${t('hmValid')}</span><span class="hm-popup-val" style="font-size:9px">${validTime}</span></div>
+        <div class="hm-popup-row"><span class="hm-popup-label">${t('hmTemp2m')}</span><span class="hm-popup-val">${f1(temp,'°C')}${fsp(tSpr)}</span></div>
+        <div class="hm-popup-row"><span class="hm-popup-label">${t('hmCloud')}</span><span class="hm-popup-val">${f0(cloud,'%')}</span></div>
+        <div class="hm-popup-row"><span class="hm-popup-label">${t('hmWind10')}</span><span class="hm-popup-val">${f0(wind,'km/h')}</span></div>
+        <div class="hm-popup-row"><span class="hm-popup-label">${t('hmGusts')}</span><span class="hm-popup-val">${f0(gust,'km/h')}${fsp(gSpr)}</span></div>
+        <div class="hm-popup-row"><span class="hm-popup-label">${t('hmRainH')}</span><span class="hm-popup-val">${f1(rain,'mm/h')}</span></div>
+        <div class="hm-popup-row"><span class="hm-popup-label">${t('hmSnowH')}</span><span class="hm-popup-val">${f1(snow,'mm/h')}</span></div>
+        <div class="hm-popup-row"><span class="hm-popup-label">${t('hmRainAccL')}</span><span class="hm-popup-val">${f1(rainAcc,'mm')}</span></div>
+        <div class="hm-popup-row"><span class="hm-popup-label">${t('hmSnowAccL')}</span><span class="hm-popup-val">${f1(snowAcc,'mm')}</span></div>
         <div class="hm-popup-row"><span class="hm-popup-label">MSLP</span><span class="hm-popup-val">${f0(mslp,'hPa')}</span></div>
-        <div class="hm-popup-row"><span class="hm-popup-label">Niebla</span><span class="hm-popup-val">${f0(fog,'%')}</span></div>
+        <div class="hm-popup-row"><span class="hm-popup-label">${t('hmFog')}</span><span class="hm-popup-val">${f0(fog,'%')}</span></div>
         <div class="hm-popup-row" style="padding-top:4px;border-top:1px solid #1e272f">
           <span style="font-size:8px;color:#38495a;font-family:'DM Mono',monospace">AROME-Arctic 2.5km · ensemble mean · 6 mbrs</span>
         </div>
