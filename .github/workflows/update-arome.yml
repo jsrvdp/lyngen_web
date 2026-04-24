@@ -2,8 +2,12 @@ name: Update AROME data
 
 on:
   schedule:
-    - cron: '40 2,5,8,11,14,17,20,23 * * *'
-  workflow_dispatch:
+    - cron: '40 2,5,8,11,14,17,20,23 * * *'   # mismo horario que antes
+  workflow_dispatch:                              # lanzar manualmente desde GitHub
+
+# Permiso para que el workflow pueda hacer push al repo
+permissions:
+  contents: write
 
 jobs:
   fetch-and-deploy:
@@ -17,8 +21,10 @@ jobs:
       - name: Fetch AROME data
         run: python fetch_arome_v2.py
 
-      - name: Deploy to Netlify
-        run: npx netlify-cli deploy --prod --dir=.
-        env:
-          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
-          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+      - name: Commit and push arome_data.json
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add arome_data.json
+          git diff --staged --quiet || git commit -m "AROME update $(date -u '+%Y-%m-%d %H:%M UTC')"
+          git push
