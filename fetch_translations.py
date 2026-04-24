@@ -27,7 +27,7 @@ if not api_key:
 
 client = anthropic.Anthropic(api_key=api_key)
 
-HTML_FILE = "test_v3.html"
+HTML_FILE = "index.html"
 
 with open(HTML_FILE, 'r') as f:
     html = f.read()
