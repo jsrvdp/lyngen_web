@@ -1766,14 +1766,12 @@ function initMap() {
     center: [69.5, 19.8],
     zoom: 7,
     zoomControl: true,
-    attributionControl: false,
+    attributionControl: true,
   });
 
-  // Dark tile layer - Stadia Alidade Smooth Dark
-  // CartoDB Dark Matter - free, no API key needed
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  // CARTO Dark Matter - requires API key (carto.com/basemaps/apikey)
+  L.tileLayer('https://basemaps.cartocdn.com/rastertiles/dark_all/{z}/{x}/{y}.png?key=cb1_53cm_1_c93efbbed391e387c62ac75c', {
     maxZoom: 19,
-    subdomains: 'abcd',
     attribution: '&copy; OpenStreetMap &copy; CARTO'
   }).addTo(map);
 
